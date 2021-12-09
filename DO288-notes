@@ -49,3 +49,44 @@ oc describe is echo
 oc delete all -l app=echo
 oc get all
 lab docker-build finish
+
+Guided Exercise
+---------------
+
+source /usr/local/etc/ocp4.config
+lab build-template start
+cd ~/DO288-apps
+git checkout master
+ls ~/DO288-apps/quotes
+less ~/DO288-apps/quotes/get.php
+less ~/DO288/labs/build-template/php-mysql-ephemeral.json
+oc login -u ${RHT_OCP4_DEV_USER} -p ${RHT_OCP4_DEV_PASSWORD} ${RHT_OCP4_MASTER_API}
+oc get templates -n openshift | grep php | grep mysql
+oc new-project ${RHT_OCP4_DEV_USER}-common
+oc create -f ~/DO288/labs/build-template/php-mysql-ephemeral.json
+oc new-project ${RHT_OCP4_DEV_USER}-build-template
+oc describe template php-mysql-ephemeral -n ${RHT_OCP4_DEV_USER}-common
+cat ~/DO288/labs/build-template/create-app.sh
+~/DO288/labs/build-template/create-app.sh
+oc logs -f bc/quotesapi
+oc get pod
+oc get route
+curl -si http://quote-$RHT_OCP4_DEV_USER.$RHT_OCP4_WILDCARD_DOMAIN/get.php
+oc describe svc quotesdb | grep Endpoints
+oc describe pod quotesdb-1-hh2g9 | grep IP
+oc describe pod quotesdb-1-hh2g9 | grep -A 4 Environment
+oc describe pod quotesapi-1-r6f31 | grep -A 5 Environment
+oc rsh quotesapi-1-r6f31 bash -c 'echo > /dev/tcp/$DATABASE_SERVICE_NAME/3306 && echo OK || echo FAIL'
+oc logs quotesapi-1-r6f31
+oc cp ~/DO288/labs/build-template/quote.sql quotesdb-1-hh2g9:/tmp/quote.sql
+oc rsh -t quotesdb-1-hh2g9
+mysql -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE < /tmp/quote.sql
+exit
+curl -si http://quote-$RHT_OCP4_DEV_USER.$RHT_OCP4_WILDCARD_DOMAIN/get.php
+cd ~
+oc delete project ${RHT_OCP4_DEV_USER}-build-template
+oc delete project ${RHT_OCP4_DEV_USER}-common
+lab build-template finish
+
+
+
