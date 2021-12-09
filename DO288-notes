@@ -88,5 +88,35 @@ oc delete project ${RHT_OCP4_DEV_USER}-build-template
 oc delete project ${RHT_OCP4_DEV_USER}-common
 lab build-template finish
 
+Lab
+----
+
+lab source-build start
+
+source /usr/local/etc/ocp4.config
+
+# Navigate to your local clone of the DO288-apps Git repository and create a new branch named source-build from the master branch
+cd ~/DO288-apps
+git checkout master
+git checkout -b source-build
+git push -u origin source-build
+# Deploy the application in the nodejs-helloworld folder to the ${youruser}-source-build project on the OpenShift cluster.
+oc login -u ${RHT_OCP4_DEV_USER} -p ${RHT_OCP4_DEV_PASSWORD} ${RHT_OCP4_MASTER_API}
+oc new-project ${RHT_OCP4_DEV_USER}-source-build
+oc new-app --as-deployment-config --name greet https://github.com/${RHT_OCP4_GITHUB_USER}/DO288-apps#source-build --context-dir nodejs-helloworld --build-env npm_config_registry=http://nexus-common.${RHT_OCP4_WILDCARD_DOMAIN}/repository/nodejs
+cd ~/DO288-apps/nodejs-helloworld
+python -m json.tool package.json
+vi package.json
+git commit -a -m "Fix typo"
+git push 
+oc start-build greet -F
+oc status
+oc expose svc/greet
+oc get routes
+curl -si http://greet-${RHT_OCP4_DEV_USER}-source-build.${RHT_OCP4_WILDCARD_DOMAIN}
+lab source-build grade
+lab source-build finish
+
+
 
 
