@@ -120,3 +120,42 @@ lab source-build finish
 
 
 
+
+Chapter 2:
+==========
+
+Quiz 1:
+-----------
+1. c
+2. a, c
+3. c
+4. c
+
+Guided Exercise:
+----------------
+
+lab container-build start
+cat ~/DO288/labs/container-build/httpd-parent/Dockerfile
+source /usr/local/etc/ocp4.config
+cd ~/DO288-apps
+git checkout master
+git checkout -b container-build
+git push -u origin container-build
+cat container-build/Dockerfile
+cat container-build/src/index.html
+oc login -u ${RHT_OCP4_DEV_USER} -p ${RHT_OCP4_DEV_PASSWORD} ${RHT_OCP4_MASTER_API}
+oc new-project ${RHT_OCP4_DEV_USER}-container-build
+oc new-app --as-deployment-config --name hola https://github.com/${RHT_OCP4_GITHUB_USER}/DO288-apps#container-build --context-dir container-build
+oc delete all -l app=hola
+vi container-build/Dockerfile
+git commit -a -m "Changed Dockerfile to enable running as a randon uid on openshift"
+git push
+cd ~
+oc new-app --as-deployment-config --name hola https://github.com/${RHT_OCP4_GITHUB_USER}/DO288-apps#container-build --context-dir container-build
+oc expose svc/hola
+oc get route
+curl http://hola-${RHT_OCP4_DEV_USER}-container-build.${RHT_OCP4_WILDCARD_DOMAIN}
+oc delete project ${RHT_OCP4_DEV_USER}-container-build
+lab container-build finish
+
+
