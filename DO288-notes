@@ -158,4 +158,45 @@ curl http://hola-${RHT_OCP4_DEV_USER}-container-build.${RHT_OCP4_WILDCARD_DOMAIN
 oc delete project ${RHT_OCP4_DEV_USER}-container-build
 lab container-build finish
 
+Guided Exercise:
+----------------
+
+lab app-config start
+
+cd ~/DO288-apps
+git checkout master
+git checkout -b app-config
+git push -u origin app-config
+cd app-config
+cat app.js
+source /usr/local/etc/ocp4.config
+oc login -u ${RHT_OCP4_DEV_USER} -p ${RHT_OCP4_DEV_PASSWORD} ${RHT_OCP4_MASTER_API}
+oc new-project ${RHT_OCP4_DEV_USER}-app-config
+oc new-app --as-deployment-config --name myapp --build-env npm_config_registry http://${RHT_OCP4_NEXUS_SERVER}/repository/nodejs nodejs:12~https://github.com/${RHT_OCP4_GITHUB_USER}/DO288-apps#app-config --context-dir app-config
+oc get pods
+oc expose svc myapp
+oc get route
+curl http://myapp-${RHT_OCP4_DEV_USER}-app-config.${RHT_OCP4_WILDCARD_DOMAIN}
+oc create configmap myappconfig --from-literal APP_MSG="Test Message"
+oc describe cm/myappconfig
+oc create secret generic myappfilesec --from-file /home/student/DO288-apps/app-config/myapp.sec
+oc get secret/myappfilesec -o json
+oc set env dc/myapp --from configmap/myappconf
+oc set volume dc/myapp --add -t secret -m /opt/app-root/secure --name myappsec-vol --secret-name myappfilesec
+oc status
+oc get pods
+oc rsh myapp-3-wzdbh env | grep APP_MSG
+curl http://myapp-${RHT_OCP4_DEV_USER}-app-config.${RHT_OCP4_WILDCARD_DOMAIN}
+oc edit cm/myappconfig
+oc describe cm/myappconfig
+oc rollout latest dc/myapp
+oc get pods
+curl http://myapp-${RHT_OCP4_DEV_USER}-app-config.${RHT_OCP4_WILDCARD_DOMAIN}
+oc delete project ${RHT_OCP4_DEV_USER}-app-config
+lab app-config finish
+
+
+
+
+
 
