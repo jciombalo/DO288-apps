@@ -195,8 +195,35 @@ curl http://myapp-${RHT_OCP4_DEV_USER}-app-config.${RHT_OCP4_WILDCARD_DOMAIN}
 oc delete project ${RHT_OCP4_DEV_USER}-app-config
 lab app-config finish
 
+Lab:
+----
 
+lab design-container start
 
+source /usr/local/etc/ocp4.config
+cd ~/DO288-apps
+git checkout master
+git checkout -b design-container
+git push -u origin design-container
+oc login -u ${RHT_OCP4_DEV_USER} -p ${RHT_OCP4_DEV_PASSWORD} ${RHT_OCP4_MASTER_API}
+oc new-project ${RHT_OCP4_DEV_USER}-design-container
+oc new-app --as-deployment-config --name elvis https://github.com/${RHT_OCP4_GITHUB_USER}/DO288-apps#design-container --context-dir hello-java
+vi hello-java/Dockerfile
+git commit -a -m "Changed Dockerfile to enable running as a randon uid on openshift"
+git push
+oc start-build elvis -F
+oc get pods
+oc status
+oc expose svc elvis
+oc get route
+curl elvis-${RHT_OCP4_DEV_USER}-design-container.${RHT_OCP4_WILDCARD_DOMAIN}/api/hello
+oc create configmap appconfig --from-literal APP_MSG="Elvis Lives"
+oc describe cm/appconfig
+oc set env dc/elvis --from configmap/appconfig
+oc get pods
+curl elvis-${RHT_OCP4_DEV_USER}-design-container.${RHT_OCP4_WILDCARD_DOMAIN}/api/hello
+lab design-container grade
+lab design-container finish
 
 
 
